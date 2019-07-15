@@ -4,21 +4,21 @@
 
 WebSocket  protocol which achieves full-duplex communications over a  single TCP connection between client and server is based on a new network protocol of the TCP.Server sends the  information to the client,reducing unnecessary overhead such as frequent authentication.Its biggest advantage is that：
 
-> - 两方请求的 header 数据很小，大概只有2 Bytes。
-> - 服务器不再是被动的接到客户端的请求后才返回数据，而是有了新数据后主动推送给客户端。
-> - 不需要多次创建TCP请求和销毁，节约宽带和服务器的资源。
+> - Request header is small in size (around 2 bytes) .
+> - The server no longer passively returns the data after receiving the client's request, but actively pushes the new data to the client.
+> - There is no need to create and  delete TCP connection repeatedly,it saves bandwidth and server resources.
 
 
 
-## 请求与订阅说明
+## Request & subscription instruction
 
-* 访问地址: `wss://www.lbkex.net/ws/V2/`
+* Access to the address: `wss://www.lbkex.net/ws/V2/`
 
-* 心跳（ping/pong）
+* Hearbeat（ping/pong）
 
-    为了防止僵尸链接，减少服务器负荷，服务器端会定时向客户连接发送心跳PING信息。客户端收到PING消息后，应立即回应。如果超过一分钟没有回应任何PING消息，连接会被自动关闭。同时，客户也可以向服务器短发送PING消息，用于检查连接是否正常。服务器端收到PING消息后，也会回应对应端PONG消息。
+    To prevent botch links and reduce server load，the server will send heartbeat periodically to the client connections.When client recieves this heartbeat message,it should response immediately.if you do not respond to any macthing "Ping"  for more than a minute,the server will disconnect this client.And then client can also send a "Ping" message to  the server  to check whether the  connection is working.After the server recieves “Ping”message ，it should response with a matching "pong" message.
 
-    **示例:**
+    **Eg:**
 
     ```javascript
     
@@ -34,38 +34,38 @@ WebSocket  protocol which achieves full-duplex communications over a  single TCP
     }
     ```
 
-    其中，pong字段必需和收到对ping消息字段完全一致。
+    When client receives this heartbeat message, it should response with a matching "pong" message which has the same integer in it.
 
 
 
-* 订阅/退订数据（subscribe/unsubscribe）
+* Subscription/Unsubscription
 
-    每个订阅数据应该至少包括一个subscribe字段，用于指定订阅的数据类型。现在可以订阅的数据包括：kbar，tick，depth，trade四种。每个订阅数据都需要一个pair字段，用来指定订阅的交易对，交易对以下划线（_)、连接。订阅成功后一旦所订阅的数据有更新，Websocket客户端将收到服务器推送的更新消息
+    Each subscription data should include at least one subscribe field  specified by the data type of the subscription. Data that can now be subscribed includes：kbar，tick，depth，trade.Each subscription needs to a pair field to specify the subscribed trading pair,which is joined with underline(_).
     
 
-    1.订阅K线数据
+    1.Subscription K-line Data
 
-    **参数:**
+    **Parameter:**
 
-    |参数名|	参数类型|	必填|	描述|
+    |Parameters|Parameters Type|Mandatory|Description|
     | :-----    | :-----   | :-----    | :-----   |
-    |action|String|是|请求的动作类型:`subscribe`,`unsubscribe`|
-    |subscribe|String|是|`kbar`|
-    |kbar|String|是|可订阅的K线类型<br>`1min`:1分钟<br>`5min`:5分钟<br>`15min`:15分钟<br>`30min`:30分钟<br>`1hr`:1小时<br>`4hr`:4小时<br>`day`:1日<br>`week`:1周<br>`month`:1月<br>`year`:1年|
-    |pair|String|是|交易对:`eth_btc`|
+    |action|String|Is|Type of action requested:`subscribe`,`unsubscribe`|
+    |subscribe|String|Is|`kbar`|
+    |kbar|String|Is|To subscribe to k-line types<br>`1min`:1,min<br>`5min`:5min<br>`15min`:15min<br>`30min`:30min<br>`1hr`:1hr<br>`4hr`:4hr<br>`day`:1day<br>`week`:1week<br>`month`:1month<br>`year`:1year|
+    |pair|String|Is|Trading pair:`eth_btc`|
 
-    **示例:**
+    **Eg:**
 
     ```javascript
     
-    # 订阅请求
+    # Subscription request
     {
         "action":"subscribe",
         "subscribe":"kbar",
         "kbar":"5min",
         "pair":"eth_btc"
     }
-    # 推送数据
+    # Push data
     {
         "kbar":{
             "a":64.32991311,
@@ -85,45 +85,45 @@ WebSocket  protocol which achieves full-duplex communications over a  single TCP
     }
     ```
 
-    **返回值说明:**
+    **Return value specification:**
 
-    |参数名|	参数类型|	描述|
+    |Parameters|Parameters Type|Description|
     | :-----    | :-----  | :-----   |
-    |t|Long|K线更新时间戳|
-    |o|BigDecimal|开|
-    |h|BigDecimal|高|
-    |l|BigDecimal|低|
-    |c|BigDecimal|收|
-    |v|BigDecimal|成交量|
-    |a|BigDecimal|成交额, 即 sum(每一笔成交价 * 该笔的成交量)|
-    |n|BigDecimal|成交笔数|
-    |slot|String|K线类型|
+    |t|Long|K-line updates the timestamp|
+    |o|BigDecimal|Open price|
+    |h|BigDecimal|Highest price|
+    |l|BigDecimal|Lowest price|
+    |c|BigDecimal|Close price|
+    |v|BigDecimal|Trading volume|
+    |a|BigDecimal|Aggregated trading value（in quote currency）|
+    |n|BigDecimal|Number of trades|
+    |slot|String|K-line type|
 
 
-    2.订阅深度
+    2.Market Depth
 
-    **参数:**
+    **Parameter:**
 
-    |参数名|	参数类型|	必填|	描述|
+    |Parameters|Parameters Type|Mandatory|Description|
     | :-----    | :-----   | :-----    | :-----   |
-    |action|String|是|请求的动作类型:`subscribe`,`unsubscribe`|
-    |subscribe|String|是|`depth`|
-    |depth|String|是|支持选择:10/50/100|
-    |pair|String|是|交易对:`eth_btc`|
+    |action|String|Is|Type of action requested:`subscribe`,`unsubscribe`|
+    |subscribe|String|Is|`depth`|
+    |depth|String|Is|Pro-choise:10/50/100|
+    |pair|String|Is|Trading pair:`eth_btc`|
 
 
-    **请求示例:**
+    **Eg:**
 
     ```javascript
 
-    # 订阅请求
+    # Subscription request
     {
         "action":"subscribe",
         "subscribe":"depth",
         "depth":"100",
         "pair":"eth_btc"
     }
-    # 推送数据
+    # Push data
     {
         "depth":{
             "asks":[
@@ -157,30 +157,30 @@ WebSocket  protocol which achieves full-duplex communications over a  single TCP
     }
     ```
 
-    **返回值说明:**
+    **Return value specification:**
 
-    |参数名|	参数类型|	描述|
+    |Parameters|Parameters Type|Description|
     | :-----    | :-----  | :-----   |
-    |asks|List|卖方深度,list.get(0):委托价, list.get(1):委托数量|
-    |bids|List|买方深度|
+    |asks|List|Selling side,list.get(0):Delegat price, list.get(1):Delegate quantity|
+    |bids|List|Buying side|
 
 
-    3.成交记录
+    3.Trade record
 
-    **参数:**
+    **Parameter:**
 
-    |参数名|	参数类型|	必填|	描述|
+    |Parameters|Parameters Type|Mandatory|Description|
     | :-----    | :-----   | :-----    | :-----   |
-    |action|String|是|请求的动作类型:`subscribe`,`unsubscribe`|
-    |subscribe|String|是|`trade`|
-    |pair|String|是|交易对:`eth_btc`|
+    |action|String|Is|Type of action requested:`subscribe`,`unsubscribe`|
+    |subscribe|String|Is|`trade`|
+    |pair|String|Is|Trading pair:`eth_btc`|
 
 
-    **请求示例:**
+    **Eg:**
 
     ```javascript
 
-    # 订阅请求
+    # Subscription request
     {
         "action":"subscribe",
         "subscribe":"trade",
@@ -202,39 +202,39 @@ WebSocket  protocol which achieves full-duplex communications over a  single TCP
     }
     ```
 
-    **返回值说明:**
+    **Return value specification:**
 
-    |参数名|	参数类型|	描述|
+    |Parameters|Parameters Type|Description|
     | :-----    | :-----  | :-----   |
-    |amount|String|最近成交数量|
-    |price|Integer|成交价|
-    |volumePrice|String|最近成交数额|
+    |amount|String|Trading volume|
+    |price|Integer|Trade price|
+    |volumePrice|String|Aggregated trading value|
     |direction|String|`sell`,`buy`|
-    |TS|String|成交时间|
+    |TS|String|Deal time|
 
 
-    4.市场行情
+    4.Market
 
-    **参数:**
+    **Parameter:**
 
-    |参数名|	参数类型|	必填|	描述|
+    |Parameters|Parameters Type|Mandatory|Description|
     | :-----    | :-----   | :-----    | :-----   |
-    |action|String|是|请求的动作类型:`subscribe`,`unsubscribe`|
-    |subscribe|String|是|`tick`|
-    |pair|String|是|交易对:`eth_btc`|
+    |action|String|Is|Type of action requested:`subscribe`,`unsubscribe`|
+    |subscribe|String|Is|`tick`|
+    |pair|String|Is|Trading pair:`eth_btc`|
 
 
-    **请求示例:**
+    **Eg:**
 
     ```javascript
 
-    # 订阅请求
+    # Subscription request
     {
         "action":"subscribe",
         "subscribe":"tick",
         "pair":"eth_btc"
     }
-    # 推送数据
+    # ush data
     {
         "tick":{
             "to_cny":76643.5,
@@ -256,36 +256,36 @@ WebSocket  protocol which achieves full-duplex communications over a  single TCP
     }
     ```
 
-    **返回值说明:**
+    **Return value specification:**
 
-    |参数名|	参数类型|	描述|
+    |Parameters|Parameters Type|Description|
     | :-----    | :-----  | :-----   |
-    |high|BigDecimal|24小时内最高价|
-    |low|BigDecimal|24小时内最低价|
-    |latest|BigDecimal|最新成交价|
-    |vol|BigDecimal|成交量|
-    |turnover|BigDecimal|成交额, 即 sum(每一笔成交价 * 该笔的成交量)|
-    |to_cny|BigDecimal|以`eth_btc`为例子, `btc`的cny折合价|
-    |to_usd|BigDecimal|以`eth_btc`为例子, `btc`的usd折合价|
-    |cny|BigDecimal|以`eth_btc`为例子, `eth`的cny折合价|
-    |usd|BigDecimal|以`eth_btc`为例子, `eth`的usd折合价|
+    |high|BigDecimal|24 hour high|
+    |low|BigDecimal|24 hour low|
+    |latest|BigDecimal|Last traded price|
+    |vol|BigDecimal|Trading volume|
+    |turnover|BigDecimal|Aggregated trading value（in quote currency）|
+    |to_cny|BigDecimal|such as`eth_btc`, convert btc into cny|
+    |to_usd|BigDecimal|such as`eth_btc`, convert btc into usd|
+    |cny|BigDecimal|such as`eth_btc`, convert eth into cny|
+    |usd|BigDecimal|such as`eth_btc`, convert eth into usd|
     |dir|String|`sell`,`buy`|
-    |change|BigDecimal|24小时内涨跌幅|
+    |change|BigDecimal|24 hour price limit|
 
 
 
-    **取消订阅示例:**
+    **取Unsubscribe example:**
 
     ```javascript
 
-    #取消K线订阅
+    #Unsubscribe from k-line
     {
         "action":"unsubscribe",
         "subscribe":"kbar",
         "kbar":"5min",
         "pair":"eth_btc"
     }
-    #取消深度订阅
+    #Unsubscribe from deep subscription
     {
         "action":"unsubscribe",
         "subscribe":"depth",
@@ -295,35 +295,35 @@ WebSocket  protocol which achieves full-duplex communications over a  single TCP
     ```
 
 
-* 请求数据（request）
+* Request data
 
-    Websocket服务器同时支持一次性请求数据
+    While connected to websocket, you can also use it in pull style by sending message to the server.
 
-    1.用请求方式一次性获取K线数据需要额外提供以下参数：
+    1.Pull request is supported with extra parameters to define the range：
 
-    **参数:**
+    **Parameter:**
 
-    |参数名|	参数类型|	必填|	描述|
+    |Parameters|Parameters Type|Mandatory|Description|
     | :-----    | :-----   | :-----    | :-----   |
-    |start|String|否|开始时间 ,接受两种格式，如`2018-08-03T17:32:00`（北京时间）, 另一种是时间戳，如`1533288720`(精确到秒)|
-    |end|String|否|截止时间|
-    |size|String|否|获取的kbar的条数|
+    |start|String|fasle|Start time ,Accept both formats，such as`2018-08-03T17:32:00`（beijing time）, another temestamp，such as`1533288720`(Accurate to seconds)|
+    |end|String|false|deadline|
+    |size|String|false|Gets the number of kbars|
 
 
-    2.用请求方式一次性获取成交记录需要额外提供以下参数：
+    2.Pull request is supported with extra parameters to obtain trade records.
 
-    **参数:**
+    **Parameter:**
 
-    |参数名|	参数类型|	必填|	描述|
+    |Parameters|Parameters Type|Mandatory|Description|
     | :-----    | :-----   | :-----    | :-----   |
-    |size|String|是|获取的交易条数|
+    |size|String|Is|获Gets the number of trades|
 
 
-    **请求示例:**
+    **Eg:**
 
     ```javascript
     
-    # 获取K线数据 Request
+    # Get k-line data Request
     {
         "action":"request",
         "request":"kbar",
@@ -333,21 +333,21 @@ WebSocket  protocol which achieves full-duplex communications over a  single TCP
         "end":"2018-08-05T17:32:00"
         "size":"576"
     }
-    # 获取深度数据 Request
+    # Get depth data Request
     {
         "action":"request",
         "request":"depth",
         "depth":"100",
         "pair":"eth_btc"
     }
-    # 获取成交数据 Request
+    # Get transaction data Request
     {
         "action":"request",
         "request":"trade",
         "pair":"eth_btc"
         "size":"100",
     }
-    # 获取市场行情数据 Request
+    # Get market data Request
     {
         "action":"request",
         "request":"tick",
